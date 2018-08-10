@@ -1,45 +1,40 @@
 module Main exposing (..)
 
-import Html exposing (Html, text, div, h1, img)
-import Html.Attributes exposing (src)
+import Html
+import Html.Styled exposing (toUnstyled)
+import Model exposing (..)
+import Random
+import Task exposing (perform)
+import View exposing (view)
+import Window exposing (Size)
+import AnimationFrame
+import Update exposing (update)
 
 
----- MODEL ----
-
-
-type alias Model =
-    {}
+---- INIT ----
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( {}, Cmd.none )
+    let
+        windowSize =
+            Size 0 0
 
+        model =
+            { windowSize = windowSize
+            , time = 0.0
+            , matrix = []
+            }
 
-
----- UPDATE ----
-
-
-type Msg
-    = NoOp
-
-
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
-    ( model, Cmd.none )
-
-
-
----- VIEW ----
-
-
-view : Model -> Html Msg
-view model =
-    div []
-        [ img [ src "/logo.svg" ] []
-        , h1 [] [ text "Your Elm App is working!" ]
-        ]
-
+        cmd =
+            Cmd.batch
+                [ perform Resize Window.size
+                , Random.generate ReceiveMatrix (generateMatrix 200 100 (Random.float -1 1))
+                ]
+    in
+        ( model
+        , cmd
+        )
 
 
 ---- PROGRAM ----
@@ -48,8 +43,26 @@ view model =
 main : Program Never Model Msg
 main =
     Html.program
-        { view = view
+        { view = view >> toUnstyled
         , init = init
         , update = update
-        , subscriptions = always Sub.none
+        , subscriptions = subscriptions
         }
+
+
+---- SUBSCRIPTIONS ----
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    Sub.batch
+        [ Window.resizes Resize
+        , AnimationFrame.diffs DeltaTime
+        ]
+
+
+generateMatrix : Int -> Int -> Random.Generator a -> Random.Generator (Matrix a)
+generateMatrix width height generator =
+    Random.list
+        height
+        (Random.list width generator)
