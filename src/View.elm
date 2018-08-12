@@ -6,6 +6,7 @@ import Html.Styled exposing (..)
 import Math.Matrix4 exposing (Mat4)
 import Math.Vector3 exposing (Vec3, vec3)
 import Model exposing (..)
+import Noise
 import Util exposing (..)
 import WebGL exposing (Mesh, Shader)
 
@@ -15,6 +16,7 @@ view model =
     styled div
         [ (width << px << toFloat) model.windowSize.width
         , (height << px << toFloat) model.windowSize.height
+        , backgroundColor (hex "251d1d")
         ]
         []
         [ webgl model ]
@@ -30,13 +32,10 @@ webgl model =
         [ WebGL.entity
             vertexShader
             fragmentShader
-            (curtain model.matrix)
-            { perspective = perspective 1.5 }
+            (curtain model)
+            { perspective = perspective (model.time / 10) }
         ]
     |> fromUnstyled
-
-
-
 
 
 
@@ -79,20 +78,41 @@ lines =
         ]
 
 
-curtain : Matrix Float -> Mesh Vertex
-curtain matrix =
+curtain : Model -> Mesh Vertex
+curtain model =
     let
+        minX =
+            -1.5
+
+        maxX =
+            1.5
+
+        minY =
+            -1.5
+
+        maxY =
+            1.5
+
         numberOfRows =
-            List.length matrix
+            model.windowSize.height // 10
+
+        numberOfColumns =
+            model.windowSize.width // 10
 
         rowHeight =
-            2 / toFloat (numberOfRows - 1)
+            (maxY - minY) / toFloat (numberOfRows - 1)
 
         wiggleHeight =
             rowHeight / 3
 
         indexToY index =
-            -1 + toFloat index * rowHeight
+            minY + toFloat index * rowHeight
+
+        positionToColor x y =
+            vec3
+                (Noise.noise3d model.redTable (toFloat x) (toFloat y) (model.time / 3) / 2 + 0.5)
+                (Noise.noise3d model.greenTable (toFloat x) (toFloat y) (model.time / 3) / 2 + 0.5)
+                (Noise.noise3d model.blueTable (toFloat x) (toFloat y) (model.time / 3) / 2 + 0.5)
 
         rowToLine rowIndex row =
             let
@@ -100,24 +120,25 @@ curtain matrix =
                     List.length row
 
                 columnWidth =
-                    2 / toFloat (numberOfColumns - 1)
+                    (maxX - minX) / toFloat (numberOfColumns - 1)
 
                 indexToX index =
-                    -1 + toFloat index * columnWidth
+                    minX + toFloat index * columnWidth
 
                 baseY =
                     indexToY rowIndex
 
                 pairToVertex index (f1, f2) =
-                    ( Vertex (vec3 (indexToX index) (baseY + f1 * wiggleHeight) 0) (vec3 0 0 0)
-                    , Vertex (vec3 (indexToX (index + 1)) (baseY + f2 * wiggleHeight) 0) (vec3 0 0 0)
+                    ( Vertex (vec3 (indexToX index) (baseY + f1 * wiggleHeight) 0) (vec3 0.7 0.42 0.42)
+                    , Vertex (vec3 (indexToX (index + 1)) (baseY + f2 * wiggleHeight) 0) (vec3 0.7 0.42 0.42)
                     )
             in
                 row
                 |> pairs
                 |> List.indexedMap pairToVertex
     in
-        cumulative (zipWith (+)) matrix
+        Util.matrix (\col row -> Noise.noise3d model.wiggleTable (toFloat col) (toFloat row) (model.time / 3)) numberOfColumns numberOfRows
+        |> cumulative (zipWith (+))
         |> List.indexedMap rowToLine
         |> List.concat
         |> WebGL.lines

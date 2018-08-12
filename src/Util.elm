@@ -1,6 +1,7 @@
 module Util exposing (..)
 
 
+import Model exposing (Matrix)
 cumulative : (a -> a -> a) -> List a -> List a
 cumulative fun list =
     case list of
@@ -33,3 +34,16 @@ pairs list =
 
         otherwise ->
             []
+
+
+matrix : (Int -> Int -> a) -> Int -> Int -> Matrix a
+matrix fun width height =
+    List.range 0 (height - 1)
+    |> List.map
+        (\row ->
+            List.range 0 (width - 1)
+            |> List.map
+                (\col ->
+                    fun col row
+                )
+        )

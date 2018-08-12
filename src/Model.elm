@@ -1,5 +1,6 @@
 module Model exposing (..)
 
+import Noise exposing (PermutationTable)
 import Time exposing (Time)
 import Window exposing (Size)
 
@@ -11,11 +12,14 @@ type alias Matrix a =
 type Msg =
     Resize Size
     | DeltaTime Time
-    | ReceiveMatrix (Matrix Float)
+    | ReceiveWiggleTable PermutationTable
 
 
 type alias Model =
     { windowSize: Size
     , time: Time
-    , matrix: Matrix Float
+    , wiggleTable: PermutationTable
+    , redTable: PermutationTable
+    , greenTable: PermutationTable
+    , blueTable: PermutationTable
     }

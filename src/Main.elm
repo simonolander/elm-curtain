@@ -3,6 +3,7 @@ module Main exposing (..)
 import Html
 import Html.Styled exposing (toUnstyled)
 import Model exposing (..)
+import Noise
 import Random
 import Task exposing (perform)
 import View exposing (view)
@@ -17,19 +18,33 @@ import Update exposing (update)
 init : ( Model, Cmd Msg )
 init =
     let
-        windowSize =
-            Size 0 0
+        seed =
+            Random.initialSeed 0
+
+        (wiggleTable, wiggleSeed) =
+            Noise.permutationTable seed
+
+        (redTable, redSeed) =
+            Noise.permutationTable wiggleSeed
+
+        (greenTable, greenSeed) =
+            Noise.permutationTable redSeed
+
+        (blueTable, blueSeed) =
+            Noise.permutationTable greenSeed
 
         model =
-            { windowSize = windowSize
+            { windowSize = Size 0 0
             , time = 0.0
-            , matrix = []
+            , wiggleTable = wiggleTable
+            , redTable = redTable
+            , greenTable = greenTable
+            , blueTable = blueTable
             }
 
         cmd =
             Cmd.batch
                 [ perform Resize Window.size
-                , Random.generate ReceiveMatrix (generateMatrix 200 100 (Random.float -1 1))
                 ]
     in
         ( model

@@ -20,9 +20,9 @@ update msg model =
             , Cmd.none
             )
 
-        ReceiveMatrix matrix ->
+        ReceiveWiggleTable wiggleTable ->
             ( { model
-              | matrix = matrix
+              | wiggleTable = wiggleTable
               }
             , Cmd.none
             )
